@@ -1,0 +1,96 @@
+/**
+ * Program purpose : to calculate anual salary, display top-performed employee, and 
+ *                   display employee with least service year.
+ *
+ * Programmer : Vishallan
+ * Date : 12 March 2024
+ */
+
+public class Employee {
+    private String name;
+    private double baseSalary;
+    private int yearsOfService;
+
+    public Employee(String name, double baseSalary, int yearsOfService) {
+        this.name = name;
+        this.baseSalary = baseSalary;
+        this.yearsOfService = yearsOfService;
+    }
+
+    public double calculateAnnualSalary() {
+        return baseSalary * (1 + 0.05 * yearsOfService);
+    }
+
+    // Getters
+    public String getName() {
+        return name;
+    }
+
+    public double getBaseSalary() {
+        return baseSalary;
+    }
+
+    public int getYearsOfService() {
+        return yearsOfService;
+    }
+}
+
+import java.io.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+
+public class EmployeeSalaryProgram {
+
+    public static void main(String[] args) {
+        List<Employee> employees = readEmployeesFromFile("employeeSalaries.txt");
+
+        if (employees == null) {
+            System.out.println("Failed to read employee data.");
+            return;
+        }
+
+        Employee topPerformer = employees.stream()
+                                         .max(Comparator.comparing(Employee::calculateAnnualSalary))
+                                         .orElse(null);
+
+        Employee leastExperienced = employees.stream()
+                                             .min(Comparator.comparing(Employee::getYearsOfService))
+                                             .orElse(null);
+
+        writeEmployeeDataToFile(employees, "employeeData.txt", topPerformer, leastExperienced);
+    }
+
+    private static List<Employee> readEmployeesFromFile(String fileName) {
+        List<Employee> employees = new ArrayList<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(fileName))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] parts = line.split(",");
+                employees.add(new Employee(parts[0].trim(), Double.parseDouble(parts[1].trim()), Integer.parseInt(parts[2].trim())));
+            }
+        } catch (FileNotFoundException e) {
+            System.err.println("File not found: " + fileName);
+            return null;
+        } catch (IOException e) {
+            System.err.println("Error reading file: " + fileName);
+            return null;
+        } catch (NumberFormatException e) {
+            System.err.println("Error parsing numerical data from file.");
+            return null;
+        }
+        return employees;
+    }
+
+    private static void writeEmployeeDataToFile(List<Employee> employees, String fileName, Employee topPerformer, Employee leastExperienced) {
+        try (PrintWriter writer = new PrintWriter(new FileWriter(fileName))) {
+            for (Employee employee : employees) {
+                writer.printf("%s: Annual Salary = %.2f, Years of Service = %d%n", employee.getName(), employee.calculateAnnualSalary(), employee.getYearsOfService());
+            }
+            writer.println("\nTop Performer: " + (topPerformer != null ? topPerformer.getName() : "N/A"));
+            writer.println("Least Years of Service: " + (leastExperienced != null ? leastExperienced.getName() : "N/A"));
+        } catch (IOException e) {
+            System.err.println("Error writing to file: " + fileName);
+        }
+    }
+}
